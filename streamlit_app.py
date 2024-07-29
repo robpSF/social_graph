@@ -144,8 +144,10 @@ if persona_details and social_graph:
 
     factions = [social_graph_sheet.cell(row=i, column=FACTIONS_COL + 1).value for i in range(2, max_rows + 1)]
     factions = list(dict.fromkeys(factions))
-    factions.remove("Faction")
-    factions.remove("")
+    if "Faction" in factions:
+        factions.remove("Faction")
+    if "" in factions:
+        factions.remove("")
     st.write(factions)
 
     factions_df = pd.DataFrame(factions, columns=["Faction"])
@@ -164,7 +166,7 @@ if persona_details and social_graph:
         progress_text = st.empty()
         progress_bar = st.progress(0)
 
-        total_steps = len(handles) + len(handles) * len(handles) // 2
+        total_steps = len(handles) + (len(handles) * (len(handles) - 1)) // 2
         step = 0
 
         for i in range(1, len(handles)):
@@ -184,26 +186,26 @@ if persona_details and social_graph:
             progress_text.text(f"Processing nodes: {step} / {len(handles)}")
             progress_bar.progress(progress_percentage)
 
-        for i in range(2, len(handles) + 1):
-            for j in range(i + 1, len(handles) + 1):
-                followed = handles[i - 1]
-                follower = handles[j - 1]
+        for i in range(1, len(handles)):
+            for j in range(i + 1, len(handles)):
+                followed = handles[i]
+                follower = handles[j]
 
                 try:
                     friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
 
                     if friend_value_x > 0:
                         g.add_edge(follower, followed)
-                        social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_x)
+                        social_graph_sheet.cell(row=i + 1, column=j + 2, value=friend_value_x)
                     elif friend_value_y > 0:
                         g.add_edge(followed, follower)
-                        social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_y)
+                        social_graph_sheet.cell(row=i + 1, column=j + 2, value=friend_value_y)
                 except Exception as e:
                     st.write(f"Error processing friendship between {followed} and {follower}: {e}")
 
                 step += 1
                 progress_percentage = step / total_steps
-                progress_text.text(f"Processing edges: {step - len(handles)} / {len(handles) * (len(handles) - 1) // 2}")
+                progress_text.text(f"Processing edges: {step - len(handles)} / {(len(handles) * (len(handles) - 1)) // 2}")
                 progress_bar.progress(progress_percentage)
 
         output_path = 'social_OUTPUT.xlsx'
