@@ -137,7 +137,7 @@ if persona_details and social_graph:
     factions = [social_graph_sheet.cell(row=i, column=FACTIONS_COL + 1).value for i in range(2, max_rows + 1)]
     factions = list(dict.fromkeys(factions))
     factions.remove("Faction")
-    factions.remove("")
+    #factions.remove("")
     st.write(factions)
 
     factions_df = pd.DataFrame(factions, columns=["Faction"])
