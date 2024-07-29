@@ -41,6 +41,14 @@ var options = {
 # This looks overall likely to follow based on reach
 def whats_the_friendship(a, b, attraction_df, affinity_df):
     # Get the persona factions
+    if a not in attraction_df.TwHandle.values:
+        st.write(f"Handle {a} not found in attraction_df")
+        return 0, 0
+
+    if b not in attraction_df.TwHandle.values:
+        st.write(f"Handle {b} not found in attraction_df")
+        return 0, 0
+
     faction_a = attraction_df.loc[attraction_df.TwHandle == a, "Faction"].values[0]
     faction_b = attraction_df.loc[attraction_df.TwHandle == b, "Faction"].values[0]
     try:
