@@ -14,15 +14,28 @@ HANDLES_COL = 2  # Remember columns start numbering at 0 in Python
 FACTIONS_COL = 3
 
 # Start to create the network viz
-g = net.Network(height='1025px', width='50%', heading='', directed=True)
+g = net.Network(height='1000px', width='100%', bgcolor='#222222', font_color='white', directed=True)
 g.set_options('''
 var options = {
     "nodes": {
         "borderWidth": 1,
-        "borderWidthSelected": 8
+        "borderWidthSelected": 8,
+        "color": {
+            "highlight": {
+                "background": "red",
+                "border": "yellow"
+            }
+        }
     },
     "edges": {
-        "borderWidthSelected": 8
+        "color": {
+            "color": "lightgray",
+            "highlight": "yellow",
+            "hover": "lightblue"
+        },
+        "width": 2,
+        "hoverWidth": 3,
+        "selectionWidth": 3
     },
     "physics": {
         "barnesHut": {
@@ -201,6 +214,6 @@ if persona_details and social_graph:
         g.save_graph('networkviz.html')
         HtmlFile = open("networkviz.html", 'r', encoding='utf-8')
         source_code = HtmlFile.read()
-        st.components.v1.html(source_code, height=800)
+        st.components.v1.html(source_code, height=1000, width="100%")
 
     st.header("All Done!")
