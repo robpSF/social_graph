@@ -133,6 +133,7 @@ if persona_details and social_graph:
     max_rows = social_graph_sheet.max_row
 
     handles = [social_graph_sheet.cell(row=i, column=HANDLES_COL + 1).value for i in range(2, max_rows + 1)]
+    handles = [handle for handle in handles if handle]  # Remove None values
 
     factions = [social_graph_sheet.cell(row=i, column=FACTIONS_COL + 1).value for i in range(2, max_rows + 1)]
     factions = list(dict.fromkeys(factions))
@@ -152,7 +153,7 @@ if persona_details and social_graph:
         affinity_df = affinity_df[["Faction", "Other_Faction", "Affinity"]]
         st.table(affinity_df)
 
-        for i in range(1, max_rows):
+        for i in range(1, len(handles)):
             persona = handles[i - 1]
             bio = df2.loc[df2.TwHandle == persona, "TwBio"].values[0] if not df2.loc[df2.TwHandle == persona, "TwBio"].empty else ""
             faction = df2.loc[df2.TwHandle == persona, "Faction"].values[0] if not df2.loc[df2.TwHandle == persona, "Faction"].empty else ""
@@ -162,19 +163,22 @@ if persona_details and social_graph:
             except:
                 g.add_node(persona, title="(" + persona + ")[" + faction + "] ")
 
-        for i in range(2, max_rows + 1):
-            for j in range(i + 1, max_rows + 1):
+        for i in range(2, len(handles) + 1):
+            for j in range(i + 1, len(handles) + 1):
                 followed = handles[i - 1]
                 follower = handles[j - 1]
 
-                friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
+                try:
+                    friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
 
-                if friend_value_x > 0:
-                    g.add_edge(follower, followed)
-                    social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_x)
-                elif friend_value_y > 0:
-                    g.add_edge(followed, follower)
-                    social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_y)
+                    if friend_value_x > 0:
+                        g.add_edge(follower, followed)
+                        social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_x)
+                    elif friend_value_y > 0:
+                        g.add_edge(followed, follower)
+                        social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_y)
+                except Exception as e:
+                    st.write(f"Error processing friendship between {followed} and {follower}: {e}")
 
         output_path = 'social_OUTPUT.xlsx'
         source_wb.save(output_path)
