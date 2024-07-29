@@ -172,7 +172,7 @@ if persona_details and social_graph:
         # Add all the network nodes (ie. all the personas)
         for i in range(1, max_rows-1):
             persona = handles[i]
-            st.write(persona)
+            #st.write(persona)
             bio = ""
             faction = ""
             try:
