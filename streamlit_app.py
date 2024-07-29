@@ -197,7 +197,7 @@ if persona_details and social_graph:
             for j in range(i + 1, max_rows-1):  # go across the columns. Using max_rows because the table is symmetrical
                 followed = handles[i]
                 follower = handles[j]
-                st.write(followed,follower)
+                #st.write(followed,follower)
 
                 friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
 
