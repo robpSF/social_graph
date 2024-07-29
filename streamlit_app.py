@@ -65,7 +65,7 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
     try:
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
     except:
-        affinity_between_factions = 0
+        affinity_between_factions = 0.05 #5% chance
 
     # FIRST pass "a is followed by b?"
     if faction_a == faction_b:  # Need to use the "inter-faction affinity"
