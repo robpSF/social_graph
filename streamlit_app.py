@@ -170,7 +170,7 @@ if persona_details and social_graph:
         step = 0
 
         # Add all the network nodes (ie. all the personas)
-        for i in range(1, max_rows):
+        for i in range(1, max_rows-1):
             persona = handles[i]
             st.write(persona)
             bio = ""
