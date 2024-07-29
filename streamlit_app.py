@@ -69,7 +69,7 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
     except:
         affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
-        #st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
+        st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
 
     # FIRST pass "a is followed by b?"
     if faction_a == faction_b:  # Intra-faction probability
@@ -199,9 +199,9 @@ if persona_details and social_graph:
                     if friend_value_x > 0:
                         g.add_edge(follower, followed)
                         social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)  # Shifted down and right
-                    elif friend_value_y > 0:
+                    if friend_value_y > 0:
                         g.add_edge(followed, follower)
-                        social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_y)  # Shifted down and right
+                        social_graph_sheet.cell(row=j + 2, column=i + 4, value=friend_value_y)  # Shifted down and right
                 except Exception as e:
                     st.write(f"Error processing friendship between {followed} and {follower}: {e}")
 
