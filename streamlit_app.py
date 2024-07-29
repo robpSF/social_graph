@@ -162,8 +162,8 @@ if persona_details and social_graph:
             except:
                 g.add_node(persona, title="(" + persona + ")[" + faction + "] ")
 
-        for i in range(2, max_rows + 1):
-            for j in range(i + 1, max_rows + 1):
+        for i in range(2, len(handles) + 1):
+            for j in range(i + 1, len(handles) + 1):
                 followed = handles[i - 1]
                 follower = handles[j - 1]
 
