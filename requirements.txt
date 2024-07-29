@@ -1,0 +1,8 @@
+numpy
+streamlit
+openpyxl
+pandas
+pyvis
+xlrd
+xlwt
+xlutils
