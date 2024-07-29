@@ -13,9 +13,6 @@ NAMES_ROW = 0
 HANDLES_COL = 2  # Remember columns start numbering at 0 in Python
 FACTIONS_COL = 3
 
-# Configurable default affinity
-DEFAULT_AFFINITY = 0.1  # Default value to use if an affinity is missing
-
 # Start to create the network viz
 g = net.Network(height='1000px', width='100%', bgcolor='#222222', font_color='white', directed=True)
 g.set_options('''
@@ -68,8 +65,7 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
     try:
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
     except:
-        affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
-        st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
+        affinity_between_factions = 0
 
     # FIRST pass "a is followed by b?"
     if faction_a == faction_b:  # Need to use the "inter-faction affinity"
