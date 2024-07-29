@@ -147,6 +147,13 @@ if persona_details and social_graph:
         affinity_df = affinity_df[["Faction", "Other_Faction", "Affinity"]]
         st.table(affinity_df)
 
+        # Progress bar
+        progress_text = st.empty()
+        progress_bar = st.progress(0)
+
+        total_steps = len(handles) + len(handles) * len(handles) // 2
+        step = 0
+
         for i in range(1, len(handles)):
             persona = handles[i - 1]
             if persona not in attraction_df.TwHandle.values:
@@ -158,6 +165,11 @@ if persona_details and social_graph:
                 g.add_node(persona, title="(" + persona + ")[" + faction + "] " + bio)
             except:
                 g.add_node(persona, title="(" + persona + ")[" + faction + "] ")
+
+            step += 1
+            progress_percentage = step / total_steps
+            progress_text.text(f"Processing nodes: {step} / {len(handles)}")
+            progress_bar.progress(progress_percentage)
 
         for i in range(2, len(handles) + 1):
             for j in range(i + 1, len(handles) + 1):
@@ -175,6 +187,11 @@ if persona_details and social_graph:
                         social_graph_sheet.cell(row=i, column=j + 2, value=friend_value_y)
                 except Exception as e:
                     st.write(f"Error processing friendship between {followed} and {follower}: {e}")
+
+                step += 1
+                progress_percentage = step / total_steps
+                progress_text.text(f"Processing edges: {step - len(handles)} / {len(handles) * (len(handles) - 1) // 2}")
+                progress_bar.progress(progress_percentage)
 
         output_path = 'social_OUTPUT.xlsx'
         source_wb.save(output_path)
