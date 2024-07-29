@@ -69,7 +69,7 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
     except:
         affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
-        st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
+        #st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
 
     # FIRST pass "a is followed by b?"
     if faction_a == faction_b:  # Intra-faction probability
