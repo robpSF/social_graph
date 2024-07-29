@@ -42,11 +42,9 @@ var options = {
 def whats_the_friendship(a, b, attraction_df, affinity_df):
     # Get the persona factions
     if a not in attraction_df.TwHandle.values:
-        st.write(f"Handle {a} not found in attraction_df")
         return 0, 0
 
     if b not in attraction_df.TwHandle.values:
-        st.write(f"Handle {b} not found in attraction_df")
         return 0, 0
 
     faction_a = attraction_df.loc[attraction_df.TwHandle == a, "Faction"].values[0]
@@ -65,8 +63,6 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         # Therefore I'm bumping up the likelihood to get chance of more followers
         followers = attraction_df.loc[attraction_df.TwHandle == a, "TwFollowers"].values[0]
         if followers > 5000 and followers < 10000:
-            st.write(a)
-            st.write(likelihood_of_following)
             likelihood_of_following = likelihood_of_following + 0.2
         if followers < 1000:
             likelihood_of_following = likelihood_of_following - 0.1
@@ -89,8 +85,6 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         # Therefore I'm bumping up the likelihood to get chance of more followers
         followers = attraction_df.loc[attraction_df.TwHandle == b, "TwFollowers"].values[0]
         if followers > 5000 and followers < 10000:
-            st.write(b)
-            st.write(likelihood_of_following)
             likelihood_of_following = likelihood_of_following + 0.2
         if followers < 1000:
             likelihood_of_following = likelihood_of_following - 0.1
@@ -155,6 +149,8 @@ if persona_details and social_graph:
 
         for i in range(1, len(handles)):
             persona = handles[i - 1]
+            if persona not in attraction_df.TwHandle.values:
+                continue
             bio = df2.loc[df2.TwHandle == persona, "TwBio"].values[0] if not df2.loc[df2.TwHandle == persona, "TwBio"].empty else ""
             faction = df2.loc[df2.TwHandle == persona, "Faction"].values[0] if not df2.loc[df2.TwHandle == persona, "Faction"].empty else ""
 
