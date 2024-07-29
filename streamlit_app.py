@@ -169,18 +169,22 @@ if persona_details and social_graph:
         total_steps = len(handles) + (len(handles) * (len(handles) - 1)) // 2
         step = 0
 
-        # Add nodes to the graph
-        for i in range(len(handles)):
+        # Add all the network nodes (ie. all the personas)
+        for i in range(1, max_rows):
             persona = handles[i]
-            if persona not in attraction_df.TwHandle.values:
-                continue
-            bio = df2.loc[df2.TwHandle == persona, "TwBio"].values[0] if not df2.loc[df2.TwHandle == persona, "TwBio"].empty else ""
-            faction = df2.loc[df2.TwHandle == persona, "Faction"].values[0] if not df2.loc[df2.TwHandle == persona, "Faction"].empty else ""
+            bio = ""
+            faction = ""
+            try:
+                bio = df2.loc[df2.TwHandle == persona, "TwBio"].values[0]
+                faction = df2.loc[df2.TwHandle == persona, "Faction"].values[0]
+            except:
+                st.write(f"Issue with bio for {persona}")
+                bio = " "
 
             try:
-                g.add_node(persona, title="(" + persona + ")[" + faction + "] " + bio)
+                g.add_node(persona, title=f"({persona})[{faction}] {bio}")
             except:
-                g.add_node(persona, title="(" + persona + ")[" + faction + "] ")
+                g.add_node(persona, title=f"({persona})[{faction}] ")
 
             step += 1
             progress_percentage = step / total_steps
@@ -188,22 +192,19 @@ if persona_details and social_graph:
             progress_bar.progress(progress_percentage)
 
         # Add edges to the graph
-        for i in range(len(handles)):
-            for j in range(i + 1, len(handles)):
+        for i in range(2, max_rows):  # go down the rows (starts at 2 because 0 is Faction and 1 is "Persona" the column heading)
+            for j in range(i + 1, max_rows):  # go across the columns. Using max_rows because the table is symmetrical
                 followed = handles[i]
                 follower = handles[j]
 
-                try:
-                    friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
+                friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
 
-                    if friend_value_x > 0:
-                        g.add_edge(follower, followed)
-                        social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)  # Shifted down and right
-                    elif friend_value_y > 0:
-                        g.add_edge(followed, follower)
-                        social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_y)  # Shifted down and right
-                except Exception as e:
-                    st.write(f"Error processing friendship between {followed} and {follower}: {e}")
+                if friend_value_x > 0:
+                    g.add_edge(follower, followed)
+                    social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)  # Shifted down and right
+                if friend_value_y > 0:
+                    g.add_edge(followed, follower)
+                    social_graph_sheet.cell(row=j + 2, column=i + 4, value=friend_value_y)  # Shifted down and right
 
                 step += 1
                 progress_percentage = step / total_steps
