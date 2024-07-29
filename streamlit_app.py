@@ -69,7 +69,7 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
     except:
         affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
-        st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
+        #st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
 
     # FIRST pass "a is followed by b?"
     if faction_a == faction_b:  # Intra-faction probability
@@ -193,10 +193,11 @@ if persona_details and social_graph:
             progress_bar.progress(progress_percentage)
 
         # Add edges to the graph
-        for i in range(2, max_rows):  # go down the rows (starts at 2 because 0 is Faction and 1 is "Persona" the column heading)
-            for j in range(i + 1, max_rows):  # go across the columns. Using max_rows because the table is symmetrical
+        for i in range(2, max_rows-1):  # go down the rows (starts at 2 because 0 is Faction and 1 is "Persona" the column heading)
+            for j in range(i + 1, max_rows-1):  # go across the columns. Using max_rows because the table is symmetrical
                 followed = handles[i]
                 follower = handles[j]
+                st.write(followed,follower)
 
                 friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
 
