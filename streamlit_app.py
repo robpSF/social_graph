@@ -184,6 +184,6 @@ if persona_details and social_graph:
         g.save_graph('networkviz.html')
         HtmlFile = open("networkviz.html", 'r', encoding='utf-8')
         source_code = HtmlFile.read()
-        st.components.v1.html(source_code, height=800)
+        st.components.v1.html(source_code, height=1000, width=1000)
 
     st.header("All Done!")
