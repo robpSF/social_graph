@@ -13,8 +13,22 @@ NAMES_ROW = 0
 HANDLES_COL = 2  # Remember columns start numbering at 0 in Python
 FACTIONS_COL = 3
 
-# Configurable default affinity
-DEFAULT_AFFINITY = 0.1  # Default value to use if an affinity is missing
+# Streamlit sliders for configurable parameters
+st.sidebar.header("Configure Parameters")
+DEFAULT_AFFINITY = st.sidebar.slider("Default Affinity", min_value=0.0, max_value=1.0, value=0.1, step=0.01,
+                                     help="Set the default affinity value to use if an affinity between factions is missing.")
+FOLLOWER_THRESHOLD_1 = st.sidebar.slider("Lower Follower Threshold", min_value=0, max_value=10000, value=1000, step=100,
+                                         help="Followers less than this value will have a reduced likelihood of following.")
+FOLLOWER_THRESHOLD_2 = st.sidebar.slider("Upper Follower Threshold", min_value=1000, max_value=20000, value=10000, step=100,
+                                         help="Followers between this range will have an increased likelihood of following.")
+LIKELIHOOD_INCREMENT = st.sidebar.slider("Likelihood Increment", min_value=0.0, max_value=1.0, value=0.2, step=0.01,
+                                         help="Increment to add to the likelihood of following for followers in the specified range.")
+LIKELIHOOD_DECREMENT = st.sidebar.slider("Likelihood Decrement", min_value=0.0, max_value=1.0, value=0.1, step=0.01,
+                                         help="Decrement to subtract from the likelihood of following for followers below the lower threshold.")
+
+# Toggle to display the graph or not
+DISPLAY_GRAPH = st.sidebar.checkbox("Display Social Graph", value=True,
+                                    help="Toggle to display or hide the social graph visualization.")
 
 # Start to create the network viz
 g = net.Network(height='1000px', width='100%', bgcolor='#222222', font_color='white', directed=True)
@@ -53,7 +67,6 @@ var options = {
 }
 ''')
 
-
 # This looks overall likely to follow based on reach
 def whats_the_friendship(a, b, attraction_df, affinity_df):
     # Get the persona factions
@@ -67,9 +80,8 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
     faction_b = attraction_df.loc[attraction_df.TwHandle == b, "Faction"].values[0]
     try:
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
-    except:
+    except KeyError:
         affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
-        #st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
 
     # FIRST pass "a is followed by b?"
     if faction_a == faction_b:  # Intra-faction probability
@@ -77,10 +89,10 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         affinity_between_factions = 1  # This overrides the "0" from above
         # Adjust likelihood based on follower count
         followers = attraction_df.loc[attraction_df.TwHandle == a, "TwFollowers"].values[0]
-        if followers > 5000 and followers < 10000:
-            likelihood_of_following = likelihood_of_following + 0.2
-        if followers < 1000:
-            likelihood_of_following = likelihood_of_following - 0.1
+        if FOLLOWER_THRESHOLD_1 < followers < FOLLOWER_THRESHOLD_2:
+            likelihood_of_following = likelihood_of_following + LIKELIHOOD_INCREMENT
+        if followers < FOLLOWER_THRESHOLD_1:
+            likelihood_of_following = likelihood_of_following - LIKELIHOOD_DECREMENT
     else:
         # Inter-faction probability
         likelihood_of_following = attraction_df.loc[attraction_df.TwHandle == a, "ProbOverAll"].values[0] * affinity_between_factions
@@ -97,10 +109,10 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
         affinity_between_factions = 1  # This overrides the "0" from above
         # Adjust likelihood based on follower count
         followers = attraction_df.loc[attraction_df.TwHandle == b, "TwFollowers"].values[0]
-        if followers > 5000 and followers < 10000:
-            likelihood_of_following = likelihood_of_following + 0.2
-        if followers < 1000:
-            likelihood_of_following = likelihood_of_following - 0.1
+        if FOLLOWER_THRESHOLD_1 < followers < FOLLOWER_THRESHOLD_2:
+            likelihood_of_following = likelihood_of_following + LIKELIHOOD_INCREMENT
+        if followers < FOLLOWER_THRESHOLD_1:
+            likelihood_of_following = likelihood_of_following - LIKELIHOOD_DECREMENT
     else:
         # Inter-faction probability
         likelihood_of_following = attraction_df.loc[attraction_df.TwHandle == b, "ProbOverAll"].values[0] * affinity_between_factions
@@ -178,7 +190,7 @@ if persona_details and social_graph:
             try:
                 bio = df2.loc[df2.TwHandle == persona, "TwBio"].values[0]
                 faction = df2.loc[df2.TwHandle == persona, "Faction"].values[0]
-            except:
+            except IndexError:
                 st.write(f"Issue with bio for {persona}")
                 bio = " "
 
@@ -218,9 +230,10 @@ if persona_details and social_graph:
         st.write("Social graph processing complete. Download the updated social graph:")
         st.download_button(label="Download social_OUTPUT.xlsx", data=open(output_path, 'rb').read(), file_name=output_path)
 
-        g.save_graph('networkviz.html')
-        HtmlFile = open("networkviz.html", 'r', encoding='utf-8')
-        source_code = HtmlFile.read()
-        st.components.v1.html(source_code, height=1000, width=1000)
+        if DISPLAY_GRAPH:
+            g.save_graph('networkviz.html')
+            HtmlFile = open("networkviz.html", 'r', encoding='utf-8')
+            source_code = HtmlFile.read()
+            st.components.v1.html(source_code, height=1000, width=1000)
 
     st.header("All Done!")
