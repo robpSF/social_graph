@@ -44,7 +44,7 @@ st.sidebar.write("""
 ### Display Social Graph
 Toggle this option to display or hide the social graph visualization.
 """)
-DISPLAY_GRAPH = st.sidebar.checkbox("Display Social Graph", value=True)
+DISPLAY_GRAPH = st.sidebar.checkbox("Display Social Graph", value=False)
 
 # Start to create the network viz
 g = net.Network(height='1000px', width='100%', bgcolor='#222222', font_color='white', directed=True)
