@@ -15,20 +15,36 @@ FACTIONS_COL = 3
 
 # Streamlit sliders for configurable parameters
 st.sidebar.header("Configure Parameters")
-DEFAULT_AFFINITY = st.sidebar.slider("Default Affinity", min_value=0.0, max_value=1.0, value=0.1, step=0.01,
-                                     help="Set the default affinity value to use if an affinity between factions is missing.")
-FOLLOWER_THRESHOLD_1 = st.sidebar.slider("Lower Follower Threshold", min_value=0, max_value=10000, value=1000, step=100,
-                                         help="Followers less than this value will have a reduced likelihood of following.")
-FOLLOWER_THRESHOLD_2 = st.sidebar.slider("Upper Follower Threshold", min_value=1000, max_value=20000, value=10000, step=100,
-                                         help="Followers between this range will have an increased likelihood of following.")
-LIKELIHOOD_INCREMENT = st.sidebar.slider("Likelihood Increment", min_value=0.0, max_value=1.0, value=0.2, step=0.01,
-                                         help="Increment to add to the likelihood of following for followers in the specified range.")
-LIKELIHOOD_DECREMENT = st.sidebar.slider("Likelihood Decrement", min_value=0.0, max_value=1.0, value=0.1, step=0.01,
-                                         help="Decrement to subtract from the likelihood of following for followers below the lower threshold.")
 
-# Toggle to display the graph or not
-DISPLAY_GRAPH = st.sidebar.checkbox("Display Social Graph", value=True,
-                                    help="Toggle to display or hide the social graph visualization.")
+st.sidebar.write("""
+### Default Affinity
+The default affinity value is used when there is no specific affinity defined between two factions. This affects the likelihood of inter-faction follow relationships.
+""")
+DEFAULT_AFFINITY = st.sidebar.slider("Default Affinity", min_value=0.0, max_value=1.0, value=0.1, step=0.01)
+
+st.sidebar.write("""
+### Follower Thresholds
+The follower thresholds define the follower count ranges that adjust the likelihood of a persona following another. 
+- **Lower Follower Threshold**: Personas with fewer followers than this threshold have a decreased likelihood of following others.
+- **Upper Follower Threshold**: Personas with follower counts between the lower and upper thresholds have an increased likelihood of following others.
+""")
+FOLLOWER_THRESHOLD_1 = st.sidebar.slider("Lower Follower Threshold", min_value=0, max_value=10000, value=1000, step=100)
+FOLLOWER_THRESHOLD_2 = st.sidebar.slider("Upper Follower Threshold", min_value=1000, max_value=20000, value=10000, step=100)
+
+st.sidebar.write("""
+### Likelihood Adjustments
+These adjustments define how much the likelihood of following is increased or decreased based on the follower thresholds.
+- **Likelihood Increment**: Increment added to the likelihood of following for personas within the specified follower count range.
+- **Likelihood Decrement**: Decrement subtracted from the likelihood of following for personas with fewer followers than the lower threshold.
+""")
+LIKELIHOOD_INCREMENT = st.sidebar.slider("Likelihood Increment", min_value=0.0, max_value=1.0, value=0.2, step=0.01)
+LIKELIHOOD_DECREMENT = st.sidebar.slider("Likelihood Decrement", min_value=0.0, max_value=1.0, value=0.1, step=0.01)
+
+st.sidebar.write("""
+### Display Social Graph
+Toggle this option to display or hide the social graph visualization.
+""")
+DISPLAY_GRAPH = st.sidebar.checkbox("Display Social Graph", value=True)
 
 # Start to create the network viz
 g = net.Network(height='1000px', width='100%', bgcolor='#222222', font_color='white', directed=True)
