@@ -204,26 +204,15 @@ if persona_details and social_graph:
         # Precompute affinity lookup
         affinity_dict = affinity_df.set_index(['Faction', 'Other_Faction'])['Affinity'].to_dict()
 
+        # Precompute likelihoods
+        df2['Likelihood'] = df2.apply(lambda row: calculate_likelihood(row['TwHandle'], row['TwFollowers'], row['Prob4Faction'], row['ProbOverAll']), axis=1)
+
         # Progress bar
         progress_text = st.empty()
         progress_bar = st.progress(0)
 
-        total_steps = len(handles) * (len(handles) - 1)
+        total_steps = len(handles) + (len(handles) * (len(handles) - 1)) // 2
         step = 0
-
-        # Create a DataFrame to store friendship values
-        friendship_df = pd.DataFrame(0, index=handles, columns=handles)
-
-        def calculate_likelihood(handle, followers, prob_faction, prob_overall):
-            if FOLLOWER_THRESHOLD_1 < followers < FOLLOWER_THRESHOLD_2:
-                return prob_faction + LIKELIHOOD_INCREMENT
-            elif followers < FOLLOWER_THRESHOLD_1:
-                return prob_faction - LIKELIHOOD_DECREMENT
-            else:
-                return prob_faction
-
-        # Precompute likelihoods
-        df2['Likelihood'] = df2.apply(lambda row: calculate_likelihood(row['TwHandle'], row['TwFollowers'], row['Prob4Faction'], row['ProbOverAll']), axis=1)
 
         for i in range(1, max_rows-1):
             persona = handles[i]
@@ -242,27 +231,26 @@ if persona_details and social_graph:
             progress_text.text(f"Processing nodes: {step} / {len(handles)}")
             progress_bar.progress(progress_percentage)
 
-        for i in range(2, max_rows-1):
-            for j in range(i + 1, max_rows-1):
-                followed = handles[i]
-                follower = handles[j]
+        def add_edges(df):
+            edges = []
+            for i in range(len(df)):
+                for j in range(i + 1, len(df)):
+                    followed = df.iloc[i]
+                    follower = df.iloc[j]
 
-                try:
-                    friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
-                except Exception as e:
-                    continue
+                    friend_value_x, friend_value_y = whats_the_friendship(followed['TwHandle'], follower['TwHandle'], attraction_df, affinity_df)
 
-                if friend_value_x > 0:
-                    g.add_edge(follower, followed)
-                    social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)
-                if friend_value_y > 0:
-                    g.add_edge(followed, follower)
-                    social_graph_sheet.cell(row=j + 2, column=i + 4, value=friend_value_y)
+                    if friend_value_x > 0:
+                        edges.append((follower['TwHandle'], followed['TwHandle']))
+                    if friend_value_y > 0:
+                        edges.append((followed['TwHandle'], follower['TwHandle']))
 
-                step += 1
-                progress_percentage = step / total_steps
-                progress_text.text(f"Processing edges: {step - len(handles)} / {total_steps}")
-                progress_bar.progress(progress_percentage)
+            return edges
+
+        edges = add_edges(df2)
+
+        for follower, followed in edges:
+            g.add_edge(follower, followed)
 
         output_path = 'social_OUTPUT.xlsx'
         source_wb.save(output_path)
