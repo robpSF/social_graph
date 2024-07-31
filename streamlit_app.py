@@ -83,69 +83,44 @@ var options = {
 }
 ''')
 
-# This looks overall likely to follow based on reach
+# Function to compute friendship likelihoods
 def whats_the_friendship(a, b, attraction_df, affinity_df):
-    # Get the persona factions
-    if a not in attraction_df.TwHandle.values:
-        return 0, 0
-
-    if b not in attraction_df.TwHandle.values:
+    if a not in attraction_df.TwHandle.values or b not in attraction_df.TwHandle.values:
         return 0, 0
 
     faction_a = attraction_df.loc[attraction_df.TwHandle == a, "Faction"].values[0]
     faction_b = attraction_df.loc[attraction_df.TwHandle == b, "Faction"].values[0]
-    try:
-        affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
-    except IndexError:
-        affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
+    
+    affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0] if len(affinity_df[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b)]) > 0 else DEFAULT_AFFINITY
 
-    # FIRST pass "a is followed by b?"
-    if faction_a == faction_b:  # Intra-faction probability
-        likelihood_of_following = attraction_df.loc[attraction_df.TwHandle == a, "Prob4Faction"].values[0]
-        affinity_between_factions = 1  # This overrides the "0" from above
-        # Adjust likelihood based on follower count
-        followers = attraction_df.loc[attraction_df.TwHandle == a, "TwFollowers"].values[0]
-        if FOLLOWER_THRESHOLD_1 < followers < FOLLOWER_THRESHOLD_2:
-            likelihood_of_following = likelihood_of_following + LIKELIHOOD_INCREMENT
-        if followers < FOLLOWER_THRESHOLD_1:
-            likelihood_of_following = likelihood_of_following - LIKELIHOOD_DECREMENT
-    else:
-        # Inter-faction probability
-        likelihood_of_following = attraction_df.loc[attraction_df.TwHandle == a, "ProbOverAll"].values[0] * affinity_between_factions
+    def likelihood(handle, faction, followers, is_same_faction):
+        if is_same_faction:
+            prob = attraction_df.loc[attraction_df.TwHandle == handle, "Prob4Faction"].values[0]
+            affinity = 1
+        else:
+            prob = attraction_df.loc[attraction_df.TwHandle == handle, "ProbOverAll"].values[0] * affinity_between_factions
+            affinity = affinity_between_factions
+        
+        if followers > 5000 and followers < 10000:
+            prob += LIKELIHOOD_INCREMENT
+        elif followers < 1000:
+            prob -= LIKELIHOOD_DECREMENT
+        
+        return prob, affinity
 
-    dice_roll = randrange(100) / 100
-    if likelihood_of_following > dice_roll:  # If likelihood is greater than dice roll
-        x = 3
-    else:
-        x = 0
+    followers_a = attraction_df.loc[attraction_df.TwHandle == a, "TwFollowers"].values[0]
+    followers_b = attraction_df.loc[attraction_df.TwHandle == b, "TwFollowers"].values[0]
 
-    # SECOND pass "b is followed by a?"
-    if faction_a == faction_b:  # Intra-faction probability
-        likelihood_of_following = attraction_df.loc[attraction_df.TwHandle == b, "Prob4Faction"].values[0]
-        affinity_between_factions = 1  # This overrides the "0" from above
-        # Adjust likelihood based on follower count
-        followers = attraction_df.loc[attraction_df.TwHandle == b, "TwFollowers"].values[0]
-        if FOLLOWER_THRESHOLD_1 < followers < FOLLOWER_THRESHOLD_2:
-            likelihood_of_following = likelihood_of_following + LIKELIHOOD_INCREMENT
-        if followers < FOLLOWER_THRESHOLD_1:
-            likelihood_of_following = likelihood_of_following - LIKELIHOOD_DECREMENT
-    else:
-        # Inter-faction probability
-        likelihood_of_following = attraction_df.loc[attraction_df.TwHandle == b, "ProbOverAll"].values[0] * affinity_between_factions
+    prob_a, affinity_a = likelihood(a, faction_a, followers_a, faction_a == faction_b)
+    prob_b, affinity_b = likelihood(b, faction_b, followers_b, faction_a == faction_b)
 
-    dice_roll = randrange(100) / 100
-    if likelihood_of_following > dice_roll:  # If likelihood is greater than dice roll
-        y = 1
-    else:
-        y = 0
+    x = 3 if prob_a > randrange(100) / 100 else 0
+    y = 1 if prob_b > randrange(100) / 100 else 0
 
-    # If they follow each other then it's a 2!
-    if x == 1 and y == 3:
-        x = 2
-        y = 2
+    if x == 3 and y == 1:
+        x = y = 2
 
     return x, y
-
 
 # Input fields for file uploads
 st.title("Microblog Social Graph")
@@ -211,7 +186,6 @@ if persona_details and social_graph:
         # Add all the network nodes (ie. all the personas)
         for i in range(1, max_rows-1):
             persona = handles[i]
-            #st.write(persona)
             bio = ""
             faction = ""
             try:
@@ -232,11 +206,10 @@ if persona_details and social_graph:
             progress_bar.progress(progress_percentage)
 
         # Add edges to the graph
-        for i in range(2, max_rows-1):  # go down the rows (starts at 2 because 0 is Faction and 1 is "Persona" the column heading)
-            for j in range(i + 1, max_rows-1):  # go across the columns. Using max_rows because the table is symmetrical
+        for i in range(2, max_rows-1):
+            for j in range(i + 1, max_rows-1):
                 followed = handles[i]
                 follower = handles[j]
-                #st.write(followed,follower)
 
                 try:
                     friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
@@ -246,10 +219,10 @@ if persona_details and social_graph:
 
                 if friend_value_x > 0:
                     g.add_edge(follower, followed)
-                    social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)  # Shifted down and right
+                    social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)
                 if friend_value_y > 0:
                     g.add_edge(followed, follower)
-                    social_graph_sheet.cell(row=j + 2, column=i + 4, value=friend_value_y)  # Shifted down and right
+                    social_graph_sheet.cell(row=j + 2, column=i + 4, value=friend_value_y)
 
                 step += 1
                 progress_percentage = step / total_steps
