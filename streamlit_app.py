@@ -24,16 +24,16 @@ DEFAULT_AFFINITY = st.sidebar.slider("Default Affinity", min_value=0.0, max_valu
 
 st.sidebar.write("""
 ### Follower Thresholds
-The follower thresholds define the follower count ranges that adjust the likelihood of a persona following another. 
-- **Lower Follower Threshold**: Personas with fewer followers than this threshold have a decreased likelihood of following others.
-- **Upper Follower Threshold**: Personas with follower counts between the lower and upper thresholds have an increased likelihood of following others.
+The follower thresholds define the follower count ranges that adjust the likelihood of a persona following another within the same faction. 
+- **Lower Follower Threshold**: Personas with fewer followers than this threshold have a decreased likelihood of following others within the same faction.
+- **Upper Follower Threshold**: Personas with follower counts between the lower and upper thresholds have an increased likelihood of following others within the same faction.
 """)
 FOLLOWER_THRESHOLD_1 = st.sidebar.slider("Lower Follower Threshold", min_value=0, max_value=10000, value=1000, step=100)
 FOLLOWER_THRESHOLD_2 = st.sidebar.slider("Upper Follower Threshold", min_value=1000, max_value=20000, value=10000, step=100)
 
 st.sidebar.write("""
 ### Likelihood Adjustments
-These adjustments define how much the likelihood of following is increased or decreased based on the follower thresholds.
+These adjustments define how much the likelihood of following is increased or decreased based on the follower thresholds within the same faction.
 - **Likelihood Increment**: Increment added to the likelihood of following for personas within the specified follower count range.
 - **Likelihood Decrement**: Decrement subtracted from the likelihood of following for personas with fewer followers than the lower threshold.
 """)
@@ -97,7 +97,6 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
     try:
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
     except IndexError:
-        st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
         affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
 
     # FIRST pass "a is followed by b?"
@@ -150,6 +149,17 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
 
 # Input fields for file uploads
 st.title("Microblog Social Graph")
+st.write("""
+## Explanation of Follower Thresholds
+
+### Intra-Faction Probability
+When two personas are from the same faction, the follower thresholds (FOLLOWER_THRESHOLD_1 and FOLLOWER_THRESHOLD_2) are used to adjust the likelihood of following.
+If a persona's follower count is within a certain range, the likelihood of them following another persona within the same faction is either increased or decreased.
+
+### Inter-Faction Probability
+When two personas are from different factions, the follower thresholds are not directly applied. Instead, the likelihood of following is adjusted based on the affinity between the factions.
+The overall probability of following is determined by the affinity between the factions and the ProbOverAll value for the personas.
+""")
 
 persona_details = st.file_uploader("Upload persona_details.xlsx", type=["xlsx"])
 social_graph = st.file_uploader("Upload Microblog_social_graph.xlsx", type=["xlsx"])
