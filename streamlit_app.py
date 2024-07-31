@@ -80,7 +80,8 @@ def whats_the_friendship(a, b, attraction_df, affinity_df):
     faction_b = attraction_df.loc[attraction_df.TwHandle == b, "Faction"].values[0]
     try:
         affinity_between_factions = affinity_df.loc[(affinity_df.Faction == faction_a) & (affinity_df.Other_Faction == faction_b), "Affinity"].values[0]
-    except KeyError:
+    except IndexError:
+        st.write(f"Affinity between {faction_a} and {faction_b} not found. Using default affinity {DEFAULT_AFFINITY}.")
         affinity_between_factions = DEFAULT_AFFINITY  # Use default affinity if not found
 
     # FIRST pass "a is followed by b?"
@@ -211,7 +212,11 @@ if persona_details and social_graph:
                 follower = handles[j]
                 #st.write(followed,follower)
 
-                friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
+                try:
+                    friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
+                except Exception as e:
+                    st.write(f"Error calculating friendship between {followed} and {follower}: {e}")
+                    continue
 
                 if friend_value_x > 0:
                     g.add_edge(follower, followed)
