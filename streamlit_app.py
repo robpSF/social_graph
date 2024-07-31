@@ -201,12 +201,6 @@ if persona_details and social_graph:
         affinity_df = affinity_df[["Faction", "Other_Faction", "Affinity"]]
         st.table(affinity_df)
 
-        # Precompute affinity lookup
-        affinity_dict = affinity_df.set_index(['Faction', 'Other_Faction'])['Affinity'].to_dict()
-
-        # Precompute likelihoods
-        df2['Likelihood'] = df2.apply(lambda row: calculate_likelihood(row['TwHandle'], row['TwFollowers'], row['Prob4Faction'], row['ProbOverAll']), axis=1)
-
         # Progress bar
         progress_text = st.empty()
         progress_bar = st.progress(0)
@@ -214,43 +208,53 @@ if persona_details and social_graph:
         total_steps = len(handles) + (len(handles) * (len(handles) - 1)) // 2
         step = 0
 
+        # Add all the network nodes (ie. all the personas)
         for i in range(1, max_rows-1):
             persona = handles[i]
+            #st.write(persona)
             bio = ""
             faction = ""
             try:
                 bio = df2.loc[df2.TwHandle == persona, "TwBio"].values[0]
                 faction = df2.loc[df2.TwHandle == persona, "Faction"].values[0]
             except IndexError:
+                st.write(f"Issue with bio for {persona}")
                 bio = " "
 
-            g.add_node(persona, title=f"({persona})[{faction}] {bio}")
+            try:
+                g.add_node(persona, title=f"({persona})[{faction}] {bio}")
+            except:
+                g.add_node(persona, title=f"({persona})[{faction}] ")
 
             step += 1
             progress_percentage = step / total_steps
             progress_text.text(f"Processing nodes: {step} / {len(handles)}")
             progress_bar.progress(progress_percentage)
 
-        def add_edges(df):
-            edges = []
-            for i in range(len(df)):
-                for j in range(i + 1, len(df)):
-                    followed = df.iloc[i]
-                    follower = df.iloc[j]
+        # Add edges to the graph
+        for i in range(2, max_rows-1):  # go down the rows (starts at 2 because 0 is Faction and 1 is "Persona" the column heading)
+            for j in range(i + 1, max_rows-1):  # go across the columns. Using max_rows because the table is symmetrical
+                followed = handles[i]
+                follower = handles[j]
+                #st.write(followed,follower)
 
-                    friend_value_x, friend_value_y = whats_the_friendship(followed['TwHandle'], follower['TwHandle'], attraction_df, affinity_df)
+                try:
+                    friend_value_x, friend_value_y = whats_the_friendship(followed, follower, attraction_df, affinity_df)
+                except Exception as e:
+                    st.write(f"Error calculating friendship between {followed} and {follower}: {e}")
+                    continue
 
-                    if friend_value_x > 0:
-                        edges.append((follower['TwHandle'], followed['TwHandle']))
-                    if friend_value_y > 0:
-                        edges.append((followed['TwHandle'], follower['TwHandle']))
+                if friend_value_x > 0:
+                    g.add_edge(follower, followed)
+                    social_graph_sheet.cell(row=i + 2, column=j + 4, value=friend_value_x)  # Shifted down and right
+                if friend_value_y > 0:
+                    g.add_edge(followed, follower)
+                    social_graph_sheet.cell(row=j + 2, column=i + 4, value=friend_value_y)  # Shifted down and right
 
-            return edges
-
-        edges = add_edges(df2)
-
-        for follower, followed in edges:
-            g.add_edge(follower, followed)
+                step += 1
+                progress_percentage = step / total_steps
+                progress_text.text(f"Processing edges: {step - len(handles)} / {(len(handles) * (len(handles) - 1)) // 2}")
+                progress_bar.progress(progress_percentage)
 
         output_path = 'social_OUTPUT.xlsx'
         source_wb.save(output_path)
